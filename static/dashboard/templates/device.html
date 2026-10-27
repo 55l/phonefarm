@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>iPhone · Instagram Workspace</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+    <script type="module" src="/assets/device.js"></script>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+    <div class="brand"><a class="brand-name" href="/">Instagram Workspace</a></div>
+    <nav class="topbar-nav"><a class="button secondary" href="/">Devices</a>__PLUGIN_NAV____AUTH_NAV__</nav>
+</div></header>
+<main class="shell device-shell" data-device-udid="__DEVICE_UDID__">
+    <section class="device-summary"><div><span class="eyebrow">Manual control</span><h1 id="device-name">Connected iPhone</h1><p id="device-details">Reading the phone’s screen size…</p></div><span class="connected"><span></span>USB device</span></section>
+    <div class="workspace-grid">
+        <section class="panel remote-panel">
+            <div class="section-heading"><div><span class="eyebrow">Live control</span><h2>Device screen</h2></div><div class="inline-actions"><button id="refresh" class="button secondary" type="button">Reconnect</button><button id="toggle" class="button secondary" type="button">Pause</button></div></div>
+            <div class="stream-workspace">
+                <div class="phone"><img id="screen" alt="Live screen from your iPhone" draggable="false"></div>
+                <div class="remote-controls" aria-label="Phone controls">
+                    <div class="swipe-pad">
+                        <button class="remote-button up" data-remote-action="up" aria-label="Swipe up">↑</button>
+                        <button class="remote-button left" data-remote-action="left" aria-label="Swipe left">←</button><span class="pad-center" aria-hidden="true"></span>
+                        <button class="remote-button right" data-remote-action="right" aria-label="Swipe right">→</button>
+                        <button class="remote-button down" data-remote-action="down" aria-label="Swipe down">↓</button>
+                    </div>
+                    <div class="system-controls">
+                        <button class="remote-button labeled" data-remote-action="home">⌂ Home</button>
+                        <button class="remote-button labeled" data-remote-action="lock">Lock screen</button>
+                        <button class="remote-button labeled" data-remote-action="wake">Wake screen</button>
+                        <button class="remote-button labeled" data-remote-action="unlock">Unlock phone</button>
+                        <button class="remote-button labeled" data-remote-action="volumeUp">＋ Volume</button>
+                        <button class="remote-button labeled" data-remote-action="volumeDown">− Volume</button>
+                    </div>
+                </div>
+            </div>
+            <p id="status" class="stream-status" role="status" aria-live="polite">Connecting…</p>
+            <p class="hint">Click to tap. Drag to swipe. Controls use your phone’s actual screen size.</p>
+        </section>
+        <div class="action-stack">
+            <section class="panel"><div class="section-heading"><div><span class="eyebrow">Instagram</span><h2>Open the app</h2></div></div>
+                <p>Use Instagram directly on your iPhone from the live screen.</p><button id="open-instagram" class="button primary">Open Instagram</button>
+                <p id="instagram-status" class="run-meta" role="status" aria-live="polite"></p>
+            </section>
+            <section class="panel">
+                <div class="section-heading"><div><span class="eyebrow">Instagram</span><h2>Doomscroll</h2></div></div>
+                <p>Open the Home or Reels feed you want to browse, then start. Uses the account currently open on the phone.</p>
+                <form id="doomscroll-form">
+                    <label for="scroll-duration">Duration (minutes)</label>
+                    <input id="scroll-duration" type="number" min="1" max="180" value="5" required>
+                    <label for="scroll-interval">Seconds between scrolls</label>
+                    <input id="scroll-interval" type="number" min="2" max="30" value="5" required>
+                    <div class="inline-actions"><button id="start-scroll" class="button primary" type="submit">Start doomscroll</button><button id="stop-scroll" class="button danger" type="button" disabled>Stop</button></div>
+                </form>
+                <p id="scroll-status" class="run-meta" role="status" aria-live="polite">Ready to scroll.</p>
+                <p class="field-help">Scrolls only—no likes, saves, comments, or follows. Runs until the timer ends or you press Stop, even if you close this page. Manual input pauses during a run.</p>
+            </section>
+            <section class="panel">
+                <div class="section-heading"><div><span class="eyebrow">Instagram</span><h2>Account directory</h2></div></div>
+                <p>Save the handles you use on this phone. This list does not sign in or change the active Instagram account.</p>
+                <ul id="account-list" class="instagram-account-list" aria-label="Saved Instagram handles"></ul>
+                <form id="accounts-form">
+                    <label for="device-accounts">Instagram handles</label>
+                    <textarea id="device-accounts" rows="4" maxlength="1000" placeholder="@account_one&#10;@account_two">__INSTAGRAM_ACCOUNTS_VALUE__</textarea>
+                    <p class="field-help">One handle per line, or separated by commas. Edit or remove handles here, then save.</p>
+                    <button class="button secondary" type="submit">Save account list</button>
+                    <p id="accounts-result" class="run-meta" role="status" aria-live="polite"></p>
+                </form>
+            </section>
+            <section class="panel">
+                <div class="section-heading"><div><span class="eyebrow">Device access</span><h2>Unlock phone</h2></div></div>
+                <p id="lock-state" role="status">Checking lock status…</p>
+                <form id="unlock-form" autocomplete="off">
+                    <label for="unlock-passcode">Numeric phone passcode</label>
+                    <input id="unlock-passcode" type="password" inputmode="numeric" autocomplete="off" minlength="4" maxlength="32" placeholder="Enter passcode for this attempt">
+                    <div class="inline-actions"><button id="unlock-now" class="button primary" type="submit">Unlock</button><button id="save-passcode" class="button secondary" type="button">Save on this Mac</button></div>
+                    <button id="clear-passcode" class="button secondary" type="button">Forget saved code</button>
+                </form>
+                <p id="saved-passcode-state" class="field-help">Checking saved passcode…</p>
+                <p id="unlock-result" role="status" aria-live="polite"></p>
+                <p class="field-help">Unlock uses the code once unless you choose Save. A saved code is kept in an owner-only local file on this Mac and is never displayed. Forget removes only this saved copy, not the phone’s passcode.</p>
+            </section>
+            <section class="panel"><h2>Switch accounts</h2><p>Open Instagram, then use its profile menu or press and hold the profile tab on the live screen to choose a signed-in account.</p><p>Sign in and enter any verification codes on the phone. Only account handles are saved in this workspace.</p></section>
+        </div>
+    </div>
+</main>
+<footer class="app-footer">__FOOTER__</footer>
+</body>
+</html>

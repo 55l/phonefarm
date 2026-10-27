@@ -1,0 +1,10 @@
+--- .appium2/node_modules/appium-xcuitest-driver/node_modules/appium-webdriveragent/WebDriverAgentLib/Commands/FBCustomCommands.m
++++ .appium2/node_modules/appium-xcuitest-driver/node_modules/appium-webdriveragent/WebDriverAgentLib/Commands/FBCustomCommands.m
+@@ -66,6 +66,7 @@
+     [[FBRoute POST:@"/wda/getPasteboard"].withoutSession respondWithTarget:self action:@selector(handleGetPasteboard:)],
+     [[FBRoute GET:@"/wda/batteryInfo"] respondWithTarget:self action:@selector(handleGetBatteryInfo:)],
+ #endif
++    [[FBRoute POST:@"/wda/pressButton"].withoutSession respondWithTarget:self action:@selector(handlePressButtonCommand:)],
+     [[FBRoute POST:@"/wda/pressButton"] respondWithTarget:self action:@selector(handlePressButtonCommand:)],
+     [[FBRoute GET:@"/wda/pressableButtons"] respondWithTarget:self action:@selector(handleGetPressableButtons:)],
+     [[FBRoute GET:@"/wda/pressableButtons"].withoutSession respondWithTarget:self action:@selector(handleGetPressableButtons:)],
