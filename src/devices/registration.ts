@@ -12,6 +12,7 @@ import { discoverConnectedDevices, type Device } from './discovery.js';
 import { loadRegisteredDevices, mutateRegisteredDevices, type RegisteredDevice } from './registry.js';
 import { passcodeForDevice, setDevicePasscode } from './secrets.js';
 import { WdaRemoteControl } from './wda-remote.js';
+import { resolveDeveloperDir } from './wda/xcode-env.js';
 import { diagnoseWdaLaunchFailure } from './wda/diagnostics.js';
 
 export type RegistrationCheckState = 'pending' | 'checking' | 'blocked' | 'passed' | 'failed';
@@ -315,7 +316,7 @@ export class DeviceRegistrationService implements DeviceRegistrationManager {
         const driverProject = path.resolve(this.workspaceRoot, process.env.XCUITEST_DRIVER_PATH
             ?? '.appium2/node_modules/appium-xcuitest-driver', 'node_modules/appium-webdriveragent/WebDriverAgent.xcodeproj');
         try {
-            await Promise.all([access(driverProject), access(process.env.XCODE_DEVELOPER_DIR ?? '/Applications/Xcode_26.2.app/Contents/Developer')]);
+            await Promise.all([access(driverProject), access(resolveDeveloperDir())]);
             session.checks.host = check('passed', 'Xcode, XCUITest, and WebDriverAgent are available');
         } catch {
             session.checks.host = check('blocked', 'Install the repository XCUITest driver and configure XCODE_DEVELOPER_DIR');

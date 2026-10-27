@@ -74,3 +74,21 @@ test('passcodeForDevice reads devices.json, then the deprecated env fallback', a
     await assert.rejects(setDevicePasscode('udid-1', 'abc'), /at least four digits/);
     await assert.rejects(setDevicePasscode('missing', '111111'), /not registered/);
 });
+
+test('one-time unlock does not overwrite a saved code and lock state never returns it', async context => {
+    await seed([{ name: 'Phone', udid: 'u1', passcode: '123456', pluginData: {} }]);
+    const { WdaRemoteControl } = await import('../src/devices/wda-remote.js');
+    let received: string | undefined;
+    context.mock.method(WdaRemoteControl.prototype, 'unlock', async (_udid: string, passcode?: string) => { received = passcode; });
+    context.mock.method(WdaRemoteControl.prototype, 'isLocked', async () => true);
+    const { createApp } = await import('../src/api/app.js');
+    const app = await createApp({ plugins: new PluginRegistry([]), scheduler });
+    context.after(() => app.close());
+    const result = await inject(app, { method: 'POST', url: '/api/devices/u1/remote/action', payload: { type: 'unlock', passcode: '654321' } });
+    assert.equal(result.statusCode, 200);
+    assert.equal(received, '654321');
+    assert.deepEqual(result.json(), { ok: true });
+    assert.equal((await onDisk())[0].passcode, '123456');
+    const state = await inject(app, { method: 'GET', url: '/api/devices/u1/remote/lock-state' });
+    assert.deepEqual(state.json(), { locked: true, hasPasscode: true });
+});

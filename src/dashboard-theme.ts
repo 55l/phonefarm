@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import type { DashboardTheme } from './api/app.js';
 import type { RegisteredDevice } from './devices/registry.js';
 
-const pluginId = 'com.git-agni.tiktok';
+const pluginId = 'local.instagram';
 
 function accounts(device: RegisteredDevice): string[] {
     const value = device.pluginData[pluginId]?.accounts;
@@ -20,8 +20,8 @@ export const defaultDashboardTheme: DashboardTheme = {
     renderDevice(template, device) {
         const configured = accounts(device);
         const options = configured.map((account) => `<option value="${escapeHtml(account)}">${escapeHtml(account)}</option>`).join('');
-        return template.replaceAll('__TIKTOK_ACCOUNT_OPTIONS__', options)
-            .replaceAll('__TIKTOK_ACCOUNTS_VALUE__', escapeHtml(configured.join(', ')))
+        return template.replaceAll('__INSTAGRAM_ACCOUNT_OPTIONS__', options)
+            .replaceAll('__INSTAGRAM_ACCOUNTS_VALUE__', escapeHtml(configured.join(', ')))
             .replaceAll('__DEVICE_HASPASSCODE__', device.passcode ? '· set' : '· not set');
     },
 };

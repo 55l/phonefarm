@@ -1,58 +1,64 @@
-# Phone Farm iOS
+# Instagram Phone Workspace
 
-An open-source, standalone application for operating physical iOS devices and running scheduled TikTok workflows. It includes guided device registration, WDA/Appium supervision, live video and remote input, PostgreSQL-backed scheduling, recurring jobs, uploads, execution history, the dashboard/API server, and a built-in TikTok automation plugin.
+A macOS dashboard for controlling physical iPhones over USB, with manual Instagram control, an account directory, scroll-only sessions, and a shared-password website login for remote demos.
 
-It runs locally as-is; authentication is optional on a loopback bind. Harden it for a shared or exposed deployment by supplying your own `AuthProvider` (`PHONE_FARM_AUTH_PLUGIN`) and process supervision — no fork required. Tasks are persisted as `pluginId`, `taskType`, `taskVersion`, and a JSON payload, so an old schedule can never silently execute a new contract.
+## Start here
 
-> Live demo and setup walkthrough: **[gethandler.ai/ios-farm](https://gethandler.ai/ios-farm)**
->
-> The full engineering writeup, TikTok on 9 real iPhones reverse engineered from the screen up (Apple's test daemon, the two WebDriverAgent patches, pixel-level UI detection, OCR account switching, never posting twice): **[gethandler.ai/tiktok-iphone-farm](https://gethandler.ai/tiktok-iphone-farm)**
+- **[AI_SETUP.md](AI_SETUP.md)** — complete installation, phone setup, verification, and remote-demo runbook for an AI assistant or human operator.
+- **[AGENTS.md](AGENTS.md)** — repository instructions for coding and setup agents.
+- [NEW_HOST_MAC.md](NEW_HOST_MAC.md) — moving the setup to another Mac.
+- [CLOUDFLARE_ACCESS.md](CLOUDFLARE_ACCESS.md) — temporary demo and optional custom-domain access.
+- [REMOTE_ACCESS.md](REMOTE_ACCESS.md) — choosing remote access and optional Tailscale.
+- [DEVELOPMENT.md](DEVELOPMENT.md) — editing the dashboard and backend.
+- [SECURITY.md](SECURITY.md) — credentials and deployment boundaries.
 
-## Documentation
+## What it does
 
-- [docs/getting-started.md](docs/getting-started.md) — install, configure, run, register a device
-- [docs/architecture.md](docs/architecture.md) — the four processes, data stores, task model, source map
-- [docs/plugins.md](docs/plugins.md) — write a plugin: tasks, execution context, versioning, panels, routes
-- [docs/coordinates.md](docs/coordinates.md) — tap-layout profiles and how to add one
-- [PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md) — plugin trust and compatibility rules
-- [SECURITY.md](SECURITY.md) — before exposing the dashboard beyond loopback
+- Live screen viewing, taps, swipes, long presses, Home, and Instagram launch.
+- Per-phone Instagram handle lists. These are labels; actual account switching happens inside Instagram.
+- Cancellable scroll-only sessions, using the phone's actual screen dimensions. No likes, comments, follows, or posting.
+- Numeric iPhone unlock using the detected accessibility keypad, with one attempt and no automatic retry. Saving a phone passcode is an explicit separate action.
+- Website password login with salted scrypt storage, secure cookies, six-hour sessions, logout, and guess limits.
+- Temporary Cloudflare demo URLs without a domain, DNS change, or Tailscale on operator devices.
 
-## Run the standalone application
+The Instagram plugin is enabled by default; the legacy TikTok plugin is disabled unless explicitly enabled. The legacy scheduler and plugin framework remain in the source. The normal manual-control/demo setup does not run a scheduler worker.
 
-Requirements are Node 22+, PostgreSQL, Xcode, a signed real-device WebDriverAgent, and Appium's XCUITest driver.
+## Installation outline
+
+On a supported Mac with full Xcode, an Apple signing team, Node 24+, PostgreSQL 16, and a USB-connected iPhone:
 
 ```sh
-npm install
-cp .env.example .env
+git clone https://github.com/55l/phonefarm.git
+cd phonefarm
+npm ci --ignore-scripts
 npm run appium:install-driver
-npm run db:up
-npm run db:migrate
-npm run wda:prepare
+npm run host:setup
 ```
 
-Run these long-lived processes (wrap each in a `launchd` agent or systemd unit for an always-on host):
+Set the Apple signing values in the generated private `.env`, pair and prepare the phone, then start the dashboard. Follow **AI_SETUP.md** for the required details and acceptance checks; the commands above alone do not finish phone setup.
+
+After local phone control works, create a temporary password-protected demo:
 
 ```sh
-npm run appium
-npm run wda:service
-npm run worker
-npm run web
+npm run demo:password
+# Set the password in the temporary localhost page, keeping it out of chat.
+npm run demo:start
+npm run demo:status
 ```
 
-TikTok support is enabled by default. Set `PHONE_FARM_PLUGINS` to comma-separated ESM package names to add more task plugins. Set `PHONE_FARM_AUTH_PLUGIN` to an ESM authentication provider before binding `WEB_HOST` outside loopback; startup deliberately fails otherwise.
+`demo:start` enforces password authentication before opening a public tunnel. It requires the official `cloudflared` connector (`brew install cloudflared`). A quick-tunnel URL changes when recreated and has no uptime guarantee. Keep the host Mac awake. Use `npm run demo:stop` to stop just the temporary connector, or `npm run local:stop` to stop the whole workspace.
 
-## Plugin contract
+## Validation and limits
 
-`src/plugin.ts` defines the stable interfaces. A plugin can provide versioned tasks, registration checks, device-page panels, namespaced HTTP routes, and declared WDA extensions. Task execution receives the exact device, that plugin's own per-device data, resolved assets, a temporary workspace, cancellation, durable logging, safe device primitives, and an observed subprocess runner.
-
-See `PLUGIN_DEVELOPMENT.md` for compatibility and trust rules.
-
-`src/example-plugin.ts` is a minimal open-app plugin. Production plugins should be separate packages and should never require changes to core routing or scheduler code.
-
-## Repository policy
-
-This repository uses GitHub-hosted CI only. Never connect production devices, Apple signing material, production databases, self-hosted runners, or deployment credentials to workflows triggered by pull requests. See `SECURITY.md`.
+The customized stack has been exercised with one physical iPhone 13 on iOS 17.0 and Xcode 26.0.1. Other device/iOS combinations and larger fleets need their own checks. Tests passing does not prove that a new Mac has working signing, USB pairing, or phone control. No ten-phone capacity guarantee is claimed.
 
 ```sh
 npm run check
+npm audit
 ```
+
+Local configuration, phone passcodes, Apple certificates, database contents, and tunnel credentials are intentionally excluded from this repository. A fresh clone requires its own local setup. No automatic macOS login startup or unattended recovery is installed.
+
+## Attribution
+
+Derived from [Git-Agni/prod-FARM-IOS-Core](https://github.com/Git-Agni/prod-FARM-IOS-Core), upstream revision `3e936babd80723b49b3e594f9403b25363078e64`, with Instagram, device-control, dependency, and remote-access changes. Original license, notice, and source copyright information are retained. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

@@ -120,6 +120,7 @@ export function profileForProductType(productType: string | undefined): Coordina
 
 export function modelNameForProductType(productType: string | undefined): string | undefined {
     if (!productType) return;
+    if (productType === 'iPhone14,5') return 'iPhone 13'; // Hardware identity is independent of automation layouts.
     return coordinateProfiles().find(({ productTypes }) => productTypes.includes(productType))?.displayName;
 }
 

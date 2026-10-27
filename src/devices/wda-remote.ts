@@ -1,4 +1,5 @@
 import { coordinatesForProfile } from './coordinates.js';
+import { detectPasscodeKeypad } from './passcode-keypad.js';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 
@@ -18,7 +19,7 @@ export type RemoteAction =
     | { type: 'home' }
     | { type: 'lock' }
     | { type: 'wake' }
-    | { type: 'unlock' }
+    | { type: 'unlock'; passcode?: string }
     | { type: 'volumeUp' }
     | { type: 'volumeDown' }
     | {
@@ -188,38 +189,63 @@ export class WdaRemoteControl {
         return payload.value;
     }
 
-    async unlock(udid: string): Promise<void> {
+    private unlocking = false;
+
+    async unlock(udid: string, passcode = this.passcode): Promise<void> {
         this.assertTarget(udid);
-        if (!(await this.isLocked(udid))) return;
-        if (!this.passcode) {
-            throw new RemoteDeviceError('IOS_PASSCODE is not configured; cannot unlock the device');
-        }
-        // WDA's /wda/unlock presses Home twice, which wakes the screen and
-        // surfaces the passcode keypad, but it then waits for the screen to
-        // report unlocked and errors out because a passcode is still required.
-        // That's expected here — the keypad is up, so ignore the error and
-        // move on to entering the passcode.
+        if (this.unlocking) throw new RemoteDeviceError('An unlock attempt is already in progress.');
+        this.unlocking = true;
         try {
-            await this.request('/wda/unlock', { method: 'POST' });
-        } catch {
-            // ignore — see comment above
-        }
-        for (const character of this.passcode) {
-            const digit = Number(character);
-            if (!Number.isInteger(digit) || digit < 0 || digit > 9) {
-                throw new RemoteDeviceError('IOS_PASSCODE must contain only digits');
+            if (!(await this.isLocked(udid))) return;
+            if (typeof passcode !== 'string' || !/^\d{4,32}$/.test(passcode)) {
+                throw new RemoteDeviceError('Enter a 4–32 digit numeric passcode in the Unlock phone panel, or save one on this Mac.');
             }
-            const { x, y } = passcodeDigitPoint(digit, this.passcodeKeypadLayout);
-            await this.request('/wda/absolute-actions', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ actions: tapActions({ type: 'tap', x, y }) }),
-            });
-            await new Promise((resolve) => setTimeout(resolve, 250));
-        }
-        if (await this.isLocked(udid)) {
-            throw new RemoteDeviceError('Device is still locked after entering the passcode');
-        }
+            const { screenSize } = await this.getScreenInfo(udid);
+            const readKeypad = async () => {
+                const source = await (await this.request('/source?format=json')).json() as WdaPayload<unknown>;
+                return detectPasscodeKeypad(source.value, screenSize);
+            };
+            let keypad = await readKeypad();
+            if (!keypad) {
+                if (!(await this.isLocked(udid))) return;
+                await this.wake(udid);
+                await new Promise(resolve => setTimeout(resolve, 400));
+                if (!(await this.isLocked(udid))) return;
+                await this.performAction(udid, { type: 'swipe', startX: Math.round(screenSize.width / 2),
+                    startY: Math.round(screenSize.height * .94), endX: Math.round(screenSize.width / 2),
+                    endY: Math.round(screenSize.height * .3), durationMs: 450 });
+                for (let i = 0; i < 4; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    if (!(await this.isLocked(udid))) return;
+                    keypad = await readKeypad();
+                    if (keypad) break;
+                }
+            }
+            if (!keypad) throw new RemoteDeviceError('The numeric passcode keypad could not be detected. Show it on the phone and try again.');
+            if (keypad.enteredDigits !== 0) throw new RemoteDeviceError('Clear any existing passcode digits on the phone before trying again.');
+            if (keypad.expectedDigits && keypad.expectedDigits !== passcode.length) {
+                throw new RemoteDeviceError(`This phone expects a ${keypad.expectedDigits}-digit passcode.`);
+            }
+            // One attempt only. Never fall back to guessed coordinates or retry a rejected code.
+            for (const digit of passcode) {
+                if (!(await this.isLocked(udid))) return; // Face ID may already have unlocked it.
+                const point = keypad.digits.get(digit)!;
+                await this.request('/wda/absolute-actions', { method: 'POST', headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ actions: tapActions({ type: 'tap', ...point }) }) });
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            for (let i = 0; i < 5; i++) {
+                if (!(await this.isLocked(udid))) return;
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            throw new RemoteDeviceError('The phone did not unlock. Check the passcode on the phone; it will not be retried automatically.');
+        } finally { this.unlocking = false; }
+    }
+
+    async wake(udid: string): Promise<void> {
+        this.assertTarget(udid);
+        await this.request('/wda/pressButton', { method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ name: 'home' }) });
     }
 
     async performAction(udid: string, action: RemoteAction): Promise<void> {
@@ -229,11 +255,12 @@ export class WdaRemoteControl {
             return;
         }
         if (action.type === 'unlock') {
-            await this.unlock(udid);
+            await this.unlock(udid, action.passcode);
             return;
         }
-        if (action.type === 'lock' || action.type === 'wake') {
-            await this.request(action.type === 'lock' ? '/wda/lock' : '/wda/unlock', { method: 'POST' });
+        if (action.type === 'wake') { await this.wake(udid); return; }
+        if (action.type === 'lock') {
+            await this.request('/wda/lock', { method: 'POST' });
             return;
         }
         if (action.type === 'volumeUp' || action.type === 'volumeDown') {

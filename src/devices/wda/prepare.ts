@@ -42,11 +42,11 @@ const runnerInfoPlistPath = path.join(wdaRoot, 'WebDriverAgentRunner/Info.plist'
 const customCommandsPath = path.join(wdaRoot, 'WebDriverAgentLib/Commands/FBCustomCommands.m');
 const patchPath = path.join(
     packageRoot,
-    'Patches/appium-webdriveragent-8.9.1-absolute-touch.patch',
+    'Patches/appium-webdriveragent-16.17.5-absolute-touch.patch',
 );
 const buttonsPatchPath = path.join(
     packageRoot,
-    'Patches/appium-webdriveragent-8.9.1-sessionless-buttons.patch',
+    'Patches/appium-webdriveragent-16.17.5-sessionless-buttons.patch',
 );
 
 await Promise.all([
@@ -58,14 +58,14 @@ const runnerInfoPlist = await readFile(runnerInfoPlistPath, 'utf8');
 if (touchCommands.includes('FBImportMedia') && runnerInfoPlist.includes('NSPhotoLibraryAddUsageDescription')) {
     console.log('WDA absolute-touch and Photos-import patch is already applied');
 } else {
-    await run('/usr/bin/patch', ['-p0', '-i', patchPath], { cwd: workspaceRoot });
+    await run('/usr/bin/patch', ['--fuzz=0', '-p0', '-i', patchPath], { cwd: workspaceRoot });
     console.log('Applied WDA absolute-touch patch');
 }
 const customCommands = await readFile(customCommandsPath, 'utf8');
 if (customCommands.includes('POST:@"/wda/pressButton"].withoutSession')) {
     console.log('WDA sessionless device-button patch is already applied');
 } else {
-    await run('/usr/bin/patch', ['-p0', '-i', buttonsPatchPath], { cwd: workspaceRoot });
+    await run('/usr/bin/patch', ['--fuzz=0', '-p0', '-i', buttonsPatchPath], { cwd: workspaceRoot });
     console.log('Applied WDA sessionless device-button patch');
 }
 

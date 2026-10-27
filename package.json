@@ -3,7 +3,7 @@
   "version": "0.1.0-review.0",
   "private": false,
   "license": "Apache-2.0",
-  "description": "Standalone iOS device farm with registration, streaming, scheduling, plugins, and TikTok automation",
+  "description": "Instagram workspace for physical iPhones with manual control, account directories, scroll sessions, and password-protected remote demos",
   "files": [
     "src",
     "static",
@@ -26,7 +26,7 @@
   },
   "scripts": {
     "appium": "APPIUM_HOME=.appium2 node node_modules/appium/index.js --address 127.0.0.1 --base-path / --port 4725 --log-level info",
-    "appium:install-driver": "APPIUM_HOME=.appium2 appium driver install xcuitest@7.26.3",
+    "appium:install-driver": "node scripts/install-ios-driver.mjs",
     "wda:prepare": "node --env-file-if-exists=.env --env-file-if-exists=.env.devices --import tsx src/devices/wda/prepare.ts",
     "wda:service": "node --env-file-if-exists=.env --env-file-if-exists=.env.devices --import tsx src/devices/wda-service.ts",
     "db:up": "docker compose up -d --wait postgres",
@@ -39,7 +39,20 @@
     "preweb": "npm run build:web",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.web.json --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test",
+    "local:start": "node scripts/local-dashboard.mjs start",
+    "local:stop": "node scripts/local-dashboard.mjs stop",
+    "local:reload": "node scripts/local-dashboard.mjs reload",
+    "remote:enable": "node scripts/remote-access.mjs enable",
+    "remote:users": "node scripts/remote-access.mjs users",
+    "remote:status": "node scripts/remote-access.mjs status",
+    "remote:off": "node scripts/remote-access.mjs off",
+    "host:setup": "node scripts/setup-host.mjs",
+    "host:package": "node scripts/package-host.mjs",
+    "demo:password": "node scripts/set-dashboard-password.mjs",
+    "demo:start": "node scripts/demo-access.mjs start",
+    "demo:status": "node scripts/demo-access.mjs status",
+    "demo:stop": "node scripts/demo-access.mjs stop"
   },
   "engines": {
     "node": ">=22"
@@ -57,11 +70,12 @@
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.12.1",
     "htmx.org": "^2.0.8",
+    "jose": "^6.2.13",
     "node-native-ocr": "^0.4.18",
     "pg": "^8.23.0",
     "pg-boss": "^12.27.0",
     "sharp": "^0.35.3",
-    "webdriverio": "9.31.3"
+    "webdriverio": "^10.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
@@ -81,5 +95,13 @@
     "edgedriver": false,
     "geckodriver": false,
     "fsevents": false
+  },
+  "overrides": {
+    "shell-quote": "^1.12.0",
+    "body-parser": "^2.4.0",
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.12"
+    },
+    "bplist-parser": "0.3.2"
   }
 }

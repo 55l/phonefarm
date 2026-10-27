@@ -87,21 +87,22 @@ async function releaseDeviceLock(): Promise<void> {
 await acquireDeviceLock();
 
 const require = createRequire(import.meta.url);
-const factoryPath = path.join(driverPath, 'build/lib/device-connections-factory.js');
+const factoryPath = path.join(driverPath, 'build/lib/device/device-connections-factory.js');
 interface DeviceConnections {
     requestConnection(udid: string, localPort: number, options: {
         usePortForwarding: boolean;
         devicePort: number;
     }): Promise<void>;
-    releaseConnection(udid: string, localPort: number): void;
+    releaseConnection(udid: string, localPort: number): Promise<void>;
 }
 interface IosUtilities {
     getConnectedDevices(): Promise<string[]>;
 }
 
-const { DEVICE_CONNECTIONS_FACTORY: deviceConnections } = require(factoryPath) as {
-    DEVICE_CONNECTIONS_FACTORY: DeviceConnections;
+const { DeviceConnectionsFactory } = require(factoryPath) as {
+    DeviceConnectionsFactory: new (logger: Console) => DeviceConnections;
 };
+const deviceConnections = new DeviceConnectionsFactory(console);
 const { utilities } = require('appium-ios-device') as { utilities: IosUtilities };
 
 const args = [
@@ -128,11 +129,13 @@ let failures = 0;
 let retryAt = 0;
 let launchFailure: string | undefined;
 
-function releaseForwarding(): void {
+async function releaseForwarding(): Promise<void> {
     if (!forwarding) return;
     forwarding = false;
-    deviceConnections.releaseConnection(udid, localPort);
-    deviceConnections.releaseConnection(udid, mjpegLocalPort);
+    await Promise.all([
+        deviceConnections.releaseConnection(udid, localPort),
+        deviceConnections.releaseConnection(udid, mjpegLocalPort),
+    ]);
 }
 
 async function stopRunner(): Promise<void> {
@@ -146,7 +149,7 @@ async function stopRunner(): Promise<void> {
         ]);
         if (running.exitCode === null) running.kill('SIGKILL');
     }
-    releaseForwarding();
+    await releaseForwarding();
 }
 
 function observeOutput(chunk: Buffer, stderr: boolean): void {
@@ -174,7 +177,7 @@ async function startRunner(): Promise<void> {
             devicePort: mjpegRemotePort,
         });
     } catch (error) {
-        releaseForwarding();
+        await releaseForwarding();
         throw error;
     }
     locked = false;
@@ -192,7 +195,7 @@ async function startRunner(): Promise<void> {
     running.once('error', (error) => report('error', `Unable to start xcodebuild: ${error.message}`));
     running.once('exit', (code, signal) => {
         if (child === running) child = undefined;
-        releaseForwarding();
+        void releaseForwarding().catch((error: unknown) => console.error('Port forwarding cleanup failed:', error));
         if (!stopping) {
             failures += 1;
             const retrySeconds = [2, 5, 10, 30][Math.min(failures - 1, 3)]!;

@@ -80,7 +80,7 @@ export async function startWorker(plugins: PluginRegistry): Promise<WorkerRuntim
 
 async function main(): Promise<void> {
     const plugins = new PluginRegistry([
-        createTikTokPlugin({ bundleId: process.env.TIKTOK_BUNDLE_ID }),
+        ...(process.env.PHONE_FARM_TIKTOK_ENABLED === 'true' ? [createTikTokPlugin({ bundleId: process.env.TIKTOK_BUNDLE_ID })] : []),
         ...await loadPlugins(configuredPluginModules()),
     ]);
     const runtime = await startWorker(plugins);
