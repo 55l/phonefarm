@@ -64,7 +64,8 @@ export async function stopCloudflareTunnel() {
     const pid = runningPid();
     if (pid) {
         process.kill(pid, 'SIGTERM');
-        for (let i = 0; i < 100 && runningPid(); i++) await delay(100);
+        // cloudflared drains active connections for up to 30 seconds by default.
+        for (let i = 0; i < 400 && runningPid(); i++) await delay(100);
         if (runningPid()) throw new Error('Cloudflare connector is still stopping.');
     }
     fs.rmSync(pidFile, { force: true });
@@ -79,7 +80,7 @@ export async function stopTemporaryTunnel() {
     try { command = execFileSync('/bin/ps', ['-p', String(record.pid), '-o', 'command='], { encoding: 'utf8' }); } catch {}
     if (command.includes('cloudflared tunnel --no-autoupdate --url http://127.0.0.1:3000 --logfile .local/cloudflare/temporary-tunnel.log')) {
         process.kill(record.pid, 'SIGTERM');
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 400; i++) {
             try { process.kill(record.pid, 0); } catch { fs.rmSync(recordFile); return; }
             await delay(100);
         }

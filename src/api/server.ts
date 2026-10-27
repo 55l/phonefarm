@@ -52,7 +52,17 @@ export async function startServer(options: StartServerOptions = {}) {
 
 async function main(): Promise<void> {
     const runtime = await startServer();
-    const shutdown = async () => runtime.close();
+    const shutdown = async () => {
+        try {
+            await runtime.close();
+            // Device discovery libraries can retain USB sockets after HTTP and
+            // database shutdown. This dedicated CLI process must still exit.
+            process.exit(0);
+        } catch (error) {
+            console.error('Dashboard shutdown failed:', error);
+            process.exit(1);
+        }
+    };
     process.once('SIGINT', () => void shutdown());
     process.once('SIGTERM', () => void shutdown());
 }

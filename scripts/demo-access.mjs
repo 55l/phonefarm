@@ -3,6 +3,7 @@ import path from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { stopTemporaryTunnel } from './cloudflare-tunnel.mjs';
+import { demoReachable } from './demo-health.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 process.chdir(root);
@@ -27,14 +28,18 @@ function writeConfig(origin, trusted = '') {
 }
 async function checkProtection() {
     for (const headers of [{}, { 'tailscale-user-login': 'owner@example.com', 'cf-access-authenticated-user-email': 'owner@example.com' }]) {
-        const response = await fetch('http://127.0.0.1:3000/api/plugins', { headers, signal: AbortSignal.timeout(5000) });
+        // Do not reuse a socket across the backend reloads performed by this CLI.
+        const response = await fetch('http://127.0.0.1:3000/api/plugins', { headers: { connection: 'close', ...headers }, signal: AbortSignal.timeout(5000) });
         if (response.status !== 401) throw new Error('The origin must reject anonymous and forged-header requests before a demo tunnel starts.');
     }
 }
 const command = process.argv[2] ?? 'status';
 if (command === 'status') {
     const record = current();
-    console.log(record ? `Temporary demo: ${record.url}\nUse the shared website password. No domain or Tailscale is required.` : 'No managed temporary demo is running.');
+    console.log(record ? await demoReachable(record.url)
+        ? `Temporary demo: ${record.url}\nUse the shared website password. No domain or Tailscale is required.`
+        : 'Temporary connector exists, but its public URL is unavailable. Run npm run demo:start to replace it.'
+        : 'No managed temporary demo is running.');
 } else if (command === 'stop') {
     await stopTemporaryTunnel();
     console.log('Temporary demo connector stopped. Website password authentication remains enabled.');
@@ -45,8 +50,20 @@ if (command === 'status') {
         const config = fs.readFileSync(configFile, 'utf8');
         if (!/^PHONE_FARM_AUTH_PLUGIN=\.\/auth\/shared-password\.ts\s*$/m.test(config)) throw new Error('Restore shared-password authentication before using this demo.');
         await checkProtection();
-        console.log(`Temporary demo already running: ${existing.url}`);
-        process.exit(0);
+        if (await demoReachable(existing.url)) {
+            // Repair a stale origin left by an interrupted setup before reusing the URL.
+            const publicOrigin = config.match(/^PUBLIC_ORIGIN=([^\n]+)/m)?.[1]?.trim();
+            const trustedOrigins = config.match(/^PHONE_FARM_TRUSTED_ORIGINS=([^\n]*)/m)?.[1]?.split(',').map(value => value.trim()) ?? [];
+            if (publicOrigin !== existing.url && !trustedOrigins.includes(existing.url)) {
+                writeConfig(existing.url, publicOrigin?.startsWith('https://') ? publicOrigin : '');
+                reload();
+                await checkProtection();
+            }
+            console.log(`Temporary demo already running: ${existing.url}`);
+            process.exit(0);
+        }
+        console.log('The previous temporary URL is unavailable; replacing its connector.');
+        await stopTemporaryTunnel();
     }
     const before = fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf8') : '';
     const backup = path.join(state, 'before-demo.env');
@@ -84,6 +101,13 @@ if (command === 'status') {
         writeConfig(url, [...origins].join(','));
         reload();
         await checkProtection();
+        let reachable = false;
+        // New quick-tunnel names can take time to reach the host's DNS cache.
+        for (let i = 0; i < 120; i++) {
+            if (await demoReachable(url)) { reachable = true; break; }
+            await delay(1000);
+        }
+        if (!reachable) throw new Error('Cloudflare issued a URL, but the public password page is not reachable yet. Inspect the private launch log and retry.');
         console.log(`Temporary password-protected demo: ${url}\nNo DNS change or Tailscale is required. Keep the Mac awake. The URL changes when a new tunnel is created.`);
     } catch (error) {
         try { process.kill(child.pid, 'SIGTERM'); } catch {}
