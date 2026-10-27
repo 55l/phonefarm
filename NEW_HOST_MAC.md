@@ -2,6 +2,8 @@
 
 Use **[AI_SETUP.md](AI_SETUP.md)** from start to finish. It is written for an AI assistant working alongside the Mac/phone owner and includes the exact prerequisites, signing, device pairing, password setup, remote demo, and verification steps.
 
+Then complete **[HOST_DEPLOYMENT.md](HOST_DEPLOYMENT.md)** for a dedicated hosted machine: choose temporary or stable access, configure optional login startup only if requested, verify restart/recovery, and record the handover privately. Merely installing dependencies does not constitute a fully set up host.
+
 ## Fresh install
 
 ```sh

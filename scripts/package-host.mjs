@@ -8,7 +8,7 @@ fs.mkdirSync('.local', { recursive: true, mode: 0o700 });
 // Explicit source allowlist: no credentials, device registry, installed packages, database, logs, or screenshots.
 const entries = ['src', 'static', 'Patches', 'drizzle', 'test', 'scripts', 'docs', '.env.example', '.gitignore',
     'package.json', 'package-lock.json', 'tsconfig.json', 'tsconfig.web.json', 'drizzle.config.ts', 'docker-compose.yml',
-    'README.md', 'AGENTS.md', 'AI_SETUP.md', 'DEVELOPMENT.md', 'REMOTE_ACCESS.md', 'CLOUDFLARE_ACCESS.md', 'NEW_HOST_MAC.md', 'LOCAL_SETUP.md', 'PLUGIN_DEVELOPMENT.md',
+    'README.md', 'AGENTS.md', 'AI_SETUP.md', 'HOST_DEPLOYMENT.md', 'DEVELOPMENT.md', 'REMOTE_ACCESS.md', 'CLOUDFLARE_ACCESS.md', 'NEW_HOST_MAC.md', 'LOCAL_SETUP.md', 'PLUGIN_DEVELOPMENT.md',
     'SECURITY.md', 'LICENSE', 'NOTICE', 'Start Dashboard.command', 'Stop Dashboard.command'].filter(file => fs.existsSync(file));
 const output = path.join(root, '.local/instagram-workspace-source.tar.gz');
 execFileSync('/usr/bin/tar', ['-czf', output, ...entries]);

@@ -5,6 +5,7 @@ A macOS dashboard for controlling physical iPhones over USB, with manual Instagr
 ## Start here
 
 - **[AI_SETUP.md](AI_SETUP.md)** — complete installation, phone setup, verification, and remote-demo runbook for an AI assistant or human operator.
+- **[HOST_DEPLOYMENT.md](HOST_DEPLOYMENT.md)** — dedicated host deployment, stable hosting, optional login startup, recovery, backups, and acceptance checklist.
 - **[AGENTS.md](AGENTS.md)** — repository instructions for coding and setup agents.
 - [NEW_HOST_MAC.md](NEW_HOST_MAC.md) — moving the setup to another Mac.
 - [CLOUDFLARE_ACCESS.md](CLOUDFLARE_ACCESS.md) — temporary demo and optional custom-domain access.

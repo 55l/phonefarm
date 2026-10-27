@@ -2,6 +2,8 @@
 
 This guide installs **this customized repository**, prepares physical iPhones, verifies Instagram control, and creates a temporary password-protected public demo. It is intended to be executed in order by an AI assistant working with the owner of the Mac and phones.
 
+For a **new dedicated hosting Mac or persistent hosted installation**, pair this runbook with **[HOST_DEPLOYMENT.md](HOST_DEPLOYMENT.md)**. That guide covers the deployment decision, stable routing, optional user-login startup, restart/recovery tests, backups, and handover. To add another iPhone to an existing host, use its phone-onboarding section instead of reinstalling the application.
+
 ## 0. Understand the deployment
 
 ```text

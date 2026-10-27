@@ -2,6 +2,8 @@
 
 Read **AI_SETUP.md** before installing, configuring, or exposing this application. That runbook is the source of truth for this customized checkout. The older architecture/plugin documents are reference material; they are not the default installation procedure.
 
+If the owner chooses a new hosting machine or persistent hosting, also follow **HOST_DEPLOYMENT.md** and complete its private installation record. Its startup template is optional and must be installed and reboot-tested on the chosen host only after deployment is requested. Do not infer authorization to change DNS or install persistence from the existence of the guide. Adding a new iPhone alone uses the phone-onboarding section and does not require reinstalling the host.
+
 - Follow the user's current scope. The default remote demo uses a temporary Cloudflare URL and one shared website password. It needs no owned domain, DNS change, Vercel migration, or Tailscale. Do not change a domain's nameservers or DNSSEC as part of a temporary demo.
 - Keep PostgreSQL, Appium, WebDriverAgent, and the dashboard origin bound to loopback. Install and verify website authentication before opening a public route.
 - Never ask for passwords, phone passcodes, signing keys, tunnel tokens, or verification codes in chat. Use the local password setup page. Have the user handle account sign-ins, Apple trust/developer prompts, and applicable agreement acceptance directly.
