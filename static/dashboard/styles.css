@@ -266,7 +266,7 @@ dialog#calibrate-dialog { width: min(760px, calc(100% - 28px)); }
 
 #unlock-form { display: grid; gap: 10px; }
 
-/* VML shared workspace. Fonts are served locally with their OFL notices. */
+/* Shared phone workspace. Fonts are served locally with their OFL notices. */
 @font-face{font-family:'IBM Plex Sans';src:url('/assets/fonts/plex-400.ttf')}
 @font-face{font-family:'IBM Plex Sans';font-weight:500;src:url('/assets/fonts/plex-500.ttf')}
 @font-face{font-family:'IBM Plex Sans';font-weight:600;src:url('/assets/fonts/plex-600.ttf')}
@@ -297,8 +297,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 
 .workspace-sidebar{position:fixed;inset:0 auto 0 0;width:222px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:80;padding:30px 14px 22px}
 .workspace-logo{display:flex;flex-direction:column;text-decoration:none;padding:0 14px 34px;gap:5px}
-.vml-wordmark{font-family:Rajdhani,sans-serif;font-size:46px;line-height:1;font-weight:700;letter-spacing:-3px}
-.vml-wordmark span{color:#ff8278}
+.workspace-mark{font-family:Rajdhani,sans-serif;font-size:28px;line-height:1;font-weight:700;letter-spacing:-.5px}
 .workspace-wordmark{font-size:9px;letter-spacing:2.1px;color:var(--muted)}
 .sidebar-caption{font-size:9px;letter-spacing:1.8px;color:var(--muted);padding:12px 14px}
 .workspace-navigation{display:grid;gap:5px;margin-bottom:20px}

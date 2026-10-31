@@ -4,9 +4,9 @@ This is the deployment checklist for an AI assistant setting up a **new hosting 
 
 Read **[AGENTS.md](AGENTS.md)** and **[AI_SETUP.md](AI_SETUP.md)** first. Use AI_SETUP for the detailed installation and phone commands, then use this guide to finish hosting, startup, operational verification, backups, and handover. Do not install anything on an existing machine merely because this document exists.
 
-## 1. Decide the installation mode
+## 1. Confirm the target hosting setup
 
-Confirm the owner's intended host and mode before making deployment changes:
+The main remote-control path in AI_SETUP.md uses a stable hostname and named tunnel. Confirm the owner’s intended host, hostname, and startup needs before making deployment changes. Alternatives remain available when explicitly chosen:
 
 | Mode | Use | Website address | Startup behavior |
 | --- | --- | --- | --- |
@@ -79,9 +79,9 @@ npm run demo:status
 
 The helper installs and verifies shared-password authentication before creating the public route. Use the new URL printed on this host. Continue to section 6; section 5 is unnecessary for a temporary demo.
 
-## 5. Stable hosting with a named Cloudflare tunnel — optional
+## 5. Stable hosting with a named Cloudflare tunnel
 
-Only perform this after the owner explicitly chooses stable hosting and approves its hostname/account/DNS scope. Follow [CLOUDFLARE_ACCESS.md](CLOUDFLARE_ACCESS.md) for provider details, especially existing website/email records and DNSSEC timing. Do not infer that an unrelated domain should be moved.
+Only perform this after the owner explicitly chooses stable hosting and approves its hostname/account/DNS scope. Follow [AI_SETUP.md section 8](AI_SETUP.md#8-connect-regular-remote-access-with-a-stable-https-address) for the complete connector sequence and [CLOUDFLARE_ACCESS.md](CLOUDFLARE_ACCESS.md) for provider details, especially existing website/email records and DNSSEC timing. Do not infer that an unrelated domain should be moved.
 
 1. Set up the approved hostname and a **dedicated remotely managed named tunnel** in the owner's Cloudflare account. Publish only that hostname to `http://127.0.0.1:3000`; never publish database/Appium/WDA ports.
 2. Save the connector token privately as `.local/cloudflare/tunnel-token`, permission 600, with the directory 700. Do not include the token in a command or document. Do not install a second brew/Cloudflare system service for the same connector; this repository's helper will own it.
@@ -124,7 +124,7 @@ Record results in a private `.local/installation.md` using [the template](docs/h
 
 | Layer | Required result |
 | --- | --- |
-| Runtime | Type checks, 50 current tests, browser build, and root/driver dependency audits pass or a reviewed limitation is documented. The test count can grow in later revisions. |
+| Runtime | Type checks, the current test suite, browser build, and root/driver dependency audits pass or a reviewed limitation is documented. The test count can grow in later revisions. |
 | Storage | Dedicated database is on loopback; local credential/config permissions are private; no existing unrelated service was replaced. |
 | Phones | Each registered phone shows the correct live image; Home, tap, swipe, and Instagram launch work on the intended phone. |
 | Account management | Handle labels save; actual Instagram account switching/login remains on the phone. |

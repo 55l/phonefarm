@@ -1,6 +1,6 @@
-# End-to-end setup runbook for AI assistants
+# AI setup: connect iPhones and enable remote control
 
-This guide installs **this customized repository**, prepares physical iPhones, verifies Instagram control, and creates a temporary password-protected public demo. It is intended to be executed in order by an AI assistant working with the owner of the Mac and phones.
+Follow this guide to set up a host Mac, connect physical iPhones over USB, and let the team view and control those phones from other devices through a password-protected website. This is the regular remote-control installation procedure; it is not limited to a demonstration. Execute it in order with the owner available for physical trust and sign-in prompts.
 
 For a **new dedicated hosting Mac or persistent hosted installation**, pair this runbook with **[HOST_DEPLOYMENT.md](HOST_DEPLOYMENT.md)**. That guide covers the deployment decision, stable routing, optional user-login startup, restart/recovery tests, backups, and handover. To add another iPhone to an existing host, use its phone-onboarding section instead of reinstalling the application.
 
@@ -16,7 +16,9 @@ Operator browser → HTTPS Cloudflare tunnel → password-protected dashboard
 
 The phones run Instagram. The Mac coordinates control and forwards screens. Operators need a browser and the shared website password; they do not need Xcode, a USB cable, Tailscale, or a Cloudflare account.
 
-For a **temporary demo**, do not ask for a domain and do not change DNS, DNSSEC, the registrar, or an existing Vercel website. A temporary `https://...trycloudflare.com` URL is sufficient. A custom domain is a separate optional deployment described in CLOUDFLARE_ACCESS.md.
+The host Mac must physically have the iPhones connected. Installing the dashboard on Vercel or another cloud website does not replace that Mac or its USB connection. Remote operators visit the host's HTTPS dashboard; their own devices need no USB connection, Xcode, Tailscale, or cloudflared. Phone internet access for Instagram and the Mac's internet connection for remote viewing are separate requirements.
+
+The regular browser-access path below uses a **named Cloudflare tunnel and an approved stable hostname**. Gather the host location, hostname, and owner-controlled Cloudflare account before configuring it. If these are not available, finish local phone setup and report remote routing as pending; do not silently replace the requested setup with an expiring link. An optional temporary-address method is included at the end for owners who choose it. Do not change an existing website, domain delegation, or DNSSEC without authorization for that scope.
 
 Default capabilities: manual control, Instagram launch, account labels, numeric unlock, scroll-only sessions. All people with the website password can access all registered phones. There are no individual operator accounts or per-phone permissions in that mode.
 
@@ -26,7 +28,8 @@ Default capabilities: manual control, Instagram launch, account labels, numeric 
 2. Establish whether this is a fresh Mac, an existing running installation, or a migration. Preserve existing `.env`, `.env.remote`, `devices.json`, and `.local` data.
 3. Check macOS, `uname -m`, `node --version`, `npm --version`, `xcode-select -p`, `xcodebuild -version`, and PostgreSQL 16 availability. Check ports 3000, 4725, 55432 and per-phone control/video ports before trying to bind them. Do not stop unrelated services.
 4. Determine the owner-provided Apple signing team and bundle ID. Read already-configured identifiers locally if available; do not invent them or publish them.
-5. If remote access is already configured, inspect the active auth provider and `npm run demo:status`. A denied direct localhost request can be expected under remote authentication.
+5. Identify existing remote access before changing it: inspect `.env.remote` privately and run `node scripts/cloudflare-tunnel.mjs status` for a named connector. Use `npm run demo:status` only if a temporary connector is in use. A denied direct localhost request can be expected under remote authentication.
+6. Record the intended host, approved HTTPS hostname, operator access model, manual versus automatic startup, and person available to accept phone prompts. The shared-password model gives all password holders access to all phones.
 
 Do not assume a brand-new install has passed the real-device checks below just because another Mac did.
 
@@ -119,7 +122,7 @@ The owner must perform physical prompts. Do not request a phone passcode or Appl
    npm run local:start
    ```
 
-   On a fresh local-only installation open `http://127.0.0.1:3000`. Use Register device to add the prepared phone with its real UDID and a useful name. Leave optional phone-passcode storage unset unless the owner explicitly wants it. Registration allocates distinct WDA/MJPEG ports; the device service then supervises the signed runner.
+   On a fresh local-only installation open `http://127.0.0.1:3000`. Use **Add a phone** to add the prepared phone with its real UDID and a useful name. Leave optional phone-passcode storage unset unless the owner explicitly wants it. Registration allocates distinct WDA/MJPEG ports; the device service then supervises the signed runner.
 7. If the installed runner triggers an untrusted developer prompt, have the owner trust the correct profile under Settings → General → VPN & Device Management. If no profile is shown yet, wait until the runner is installed/launched; the build alone may not create it.
 8. Keep the phone unlocked for initial launch. Confirm the dashboard shows it online and its actual screen.
 
@@ -134,46 +137,73 @@ Use harmless deliberate actions and document what actually passed:
 - Open Instagram launches the existing installed Instagram app without resetting its data. The owner handles Instagram sign-in directly on the phone.
 - The account directory saves labels. It does not sign into or switch accounts; switching remains manual inside Instagram.
 - If unlock is in scope, ask the owner to show the numeric passcode keypad, then enter the code directly in the dashboard's Unlock phone panel. Verify one attempt. **Unlock** is transient; **Save on this Mac** separately persists a copy in `devices.json`, which is owner-only but not encrypted storage. Never retry a failed code automatically.
-- If scroll sessions are in scope, deliberately start a short run on the desired Instagram feed, then Stop. It should send only screen-relative swipes. Manual input is blocked while a run owns the phone. Closing a browser does not stop a run; Stop or backend shutdown does. Runs do not resume after restart.
+- If scroll sessions are in scope, deliberately start a short run on the desired Instagram feed, then Stop. It should send only screen-relative swipes. Manual input is blocked during a scroll session to avoid conflicting actions. This is not an operator takeover system. Closing a browser does not stop a run; Stop or backend shutdown does. Runs do not resume after restart.
 
-If a phone is offline, report that local phone control remains unverified. A working website can still be demonstrated, but do not represent it as a live control test.
+If a phone is offline, report that local phone control remains unverified. A working website does not prove phone control. Controls are enabled when USB discovery sees the registered phone; a running WDA controller is also needed for images and input.
 
-## 7. Set the shared website password privately
+## 7. Configure website authentication privately
 
 ```sh
 npm run demo:password
 ```
 
-The command prints a random, local-only setup URL. Open that URL in a browser on the host Mac. Have the owner enter the password twice and Save; use 12–256 characters. Do not inspect the password fields or copy the password into chat, terminal arguments, or documentation.
+The command name is historical: it sets the website password for **both stable and temporary access**; it does not create a tunnel. The command prints a random, local-only setup URL. Open that URL in a browser on the host Mac. Have the owner enter the password twice and Save; use 12–256 characters. Do not inspect the password fields or copy the password into chat, terminal arguments, or documentation.
 
 The setup server exits after success. It stores only a random salt and scrypt hash in `.local/cloudflare/shared-auth.json` (600). This website password is different from iPhone unlock codes and the database password.
 
 If the owner is rotating an existing password, reload the dashboard afterward with `npm run local:reload`. Existing sessions then end. A shared password has no individual attribution: changing it and reloading is how to remove a former operator's access.
 
-## 8. Start the temporary public demo
+## 8. Connect regular remote access with a stable HTTPS address
 
-Make sure public access is within the user's authorized scope; honor actual tool confirmation requirements. Do not add an unnecessary domain/account onboarding flow.
+Complete local phone control and password setup first. Use a dedicated **remotely managed named Cloudflare tunnel**, with the connector running on the same Mac as the dashboard. A tunnel is the route to the app; the app's shared-password provider is the sign-in gate. Creating a tunnel alone does not secure a dashboard.
 
-```sh
-npm run demo:start
-npm run demo:status
+### 8.1 Prepare the approved hostname and tunnel
+
+1. Have the owner sign in to Cloudflare directly. Use the current Cloudflare One dashboard's Networks / Connectors / Cloudflare Tunnels area to create a named cloudflared tunnel for this host. Navigation labels can change; check the official documentation linked below.
+2. Confirm the approved domain's DNS is supported by the account's Cloudflare setup. A domain registered elsewhere can remain registered there. If it is not already configured for Cloudflare, inspect existing website/email records and DNSSEC and obtain authorization for the actual DNS scope before changing it; follow CLOUDFLARE_ACCESS.md. Do not use a remembered domain or hostname from another installation.
+3. Store the tunnel connector token locally at `.local/cloudflare/tunnel-token`; directory mode 700, file mode 600. Use a private file editor or owner-controlled entry, never a command containing the token. Do not paste the token into chat, commit it, or run Cloudflare's token-in-command example in a recorded terminal. Do not install a second system connector service: this repository's helper manages this connector.
+4. Configure the tunnel's published application route for the approved hostname (for example, `phones.example.com`) to the service **HTTP → `127.0.0.1:3000`**. Leave the path unrestricted so `/api`, `/assets`, `/auth`, and `/devices` reach the app. Do not route video directly to a WDA port or expose Appium, PostgreSQL, or Mac remote desktop. Keep the connector stopped until authentication is verified below. Browser access to the hostname uses HTTPS even though the connector's loopback service uses HTTP.
+
+### 8.2 Enable the app's existing password gate
+
+Back up an existing `.env.remote` privately before deliberately updating it. On a fresh installation, create it with the following values, replacing the example hostname with the actual approved hostname:
+
+```dotenv
+WEB_HOST=127.0.0.1
+PUBLIC_ORIGIN=https://phones.example.com
+PHONE_FARM_AUTH_PLUGIN=./auth/shared-password.ts
+PHONE_FARM_PASSWORD_FILE=.local/cloudflare/shared-auth.json
 ```
 
-The helper:
+Keep `.env.remote` mode 600. Preserve unrelated settings that this host still needs. Review/remove obsolete `PHONE_FARM_TRUSTED_ORIGINS` entries when retiring old routes; never use `*`. If the named connector is already enabled on an existing installation, stop the managed connectors before changing auth or routing and plan the interruption with the owner.
 
-1. Requires the password record and writes the shared-password auth configuration to `.env.remote` (600).
-2. Reloads the web service and checks that anonymous and forged-identity-header API requests return 401 **before** creating a public route.
-3. Starts the official cloudflared connector on this Mac, obtains a random `trycloudflare.com` HTTPS URL, and records its verified process ID privately.
-4. Configures the exact public origin so browser login/control writes pass the same-origin guard, then reloads and checks protection again.
-5. Prints the actual URL for the operator. Use that value; do not reuse a URL from another host or a past session.
+```sh
+npm run local:reload
+curl --silent --output /dev/null --write-out '%{http_code}\n' http://127.0.0.1:3000/api/devices
+curl --silent --output /dev/null --write-out '%{http_code}\n' -H 'tailscale-user-login: owner@example.com' -H 'cf-access-authenticated-user-email: owner@example.com' http://127.0.0.1:3000/api/devices
+```
 
-Reloading signs out existing sessions and cancels active scroll sessions. If a running installation has custom remote settings, review the helper before applying it; its previous `.env.remote` is backed up privately as `.local/cloudflare/before-demo.env`. Do not restore an unauthenticated backup while any public tunnel remains.
+Both API requests must return **401**, without device data. Do not start the connector if either request succeeds anonymously. Reloading ends website sessions and scroll runs; it does not change the password.
 
-A Cloudflare account, owned domain, Tailscale, router port forwarding, and DNS changes are **not required**. The temporary service has no uptime guarantee, supports up to 200 in-flight requests, and does not support SSE. The dashboard's live video is MJPEG; real streaming still needs a phone test. A new tunnel gets a new URL. See Cloudflare's current Quick Tunnel documentation if behavior or limits change.
+### 8.3 Start the named connector
 
-If cloudflared refuses a quick tunnel because another local `config.yml` is present, inspect that configuration; do not delete another application's tunnel settings. Use an isolated configuration according to the installed connector's official documentation.
+Once the token, route, password record, and protected origin are ready:
 
-## 9. Verify public access before calling it complete
+```sh
+chmod 700 .local/cloudflare
+chmod 600 .local/cloudflare/tunnel-token .env.remote
+# Create this marker only after the preceding authentication checks pass.
+touch .local/cloudflare/enabled
+chmod 600 .local/cloudflare/enabled
+node scripts/cloudflare-tunnel.mjs start
+node scripts/cloudflare-tunnel.mjs status
+```
+
+The helper checks anonymous/forged-header requests before connecting and reads the token from its private file. Confirm Cloudflare reports the connector healthy. Open the actual HTTPS hostname; it should redirect to the password page with a valid certificate. Do not bypass certificate warnings or disable CSRF to make login work. The shared-password flow does not require an email-based Cloudflare Access policy; individual identity login would be a separate configuration.
+
+Retire any previous temporary connector with `npm run demo:stop` and remove stale trusted origins once cutover works. When moving an existing named tunnel between Macs, stop its old connector before final cutover so requests cannot reach two different hosts. Stop all public routes before restoring any unauthenticated local configuration.
+
+## 9. Verify remote control from another device before calling it complete
 
 From a browser or HTTP client without an existing session:
 
@@ -181,10 +211,10 @@ From a browser or HTTP client without an existing session:
 | --- | --- |
 | GET `/` with HTML Accept | Redirect to `/auth/login`. |
 | GET `/auth/login` | Password page over valid HTTPS. |
-| GET `/api/devices` | 401, no phone/account data. |
+| GET `/api/devices` and a registered phone’s `/api/devices/ACTUAL_UDID/remote/screenshot` without cookies | 401, no phone/account/image data. |
 | Fake Tailscale/Cloudflare identity headers | Still 401. |
 | Cross-site login POST | 403. |
-| Owner enters correct password in browser | Devices dashboard opens. |
+| Owner enters correct password in browser | Shared phone dashboard opens; actual registered phones appear. |
 | Live screen and a harmless phone action | Work on the intended connected phone. |
 | Log out → Sign out, then revisit `/` | Password page again; prior session no longer works. |
 | Second operator device, Tailscale disconnected | Same password login works. |
@@ -193,19 +223,28 @@ Do not read or export browser cookies to impersonate the owner. Have the owner p
 
 Session cookies are HttpOnly, Secure, SameSite=Strict, and last six hours. Restarting the backend clears server-side sessions. Plain HTTP localhost is not the remote-password login test because Secure cookies need HTTPS. New code changes should retain these properties.
 
-## 10. Daily operations and additional phones
+## 10. Daily startup, additional phones, and recovery
 
-- `Start Dashboard.command` or `npm run local:start`: starts app-owned database/control/web services. The shortcut opens the active URL where known.
-- `Stop Dashboard.command` or `npm run local:stop`: stops app-owned temporary/named connectors and services. It does not stop unrelated databases or apps.
-- `npm run local:reload`: reloads web/backend code without deliberately restarting WDA; ends website sessions and scroll runs.
-- `npm run demo:stop`: stops only the managed temporary connector; leaves authentication enabled.
-- `npm run demo:start`: starts a fresh demo after a stop. Share the newly printed URL; the old bookmark expires.
+For an already configured named-tunnel installation:
 
-A temporary quick tunnel is not automatically recreated at login or by Start Dashboard. Starting the Mac does not start the dashboard either. Do not promise unattended recovery until an explicit startup/recovery solution has been implemented and tested.
+```sh
+npm run local:start
+node scripts/cloudflare-tunnel.mjs status
+```
 
-For each extra phone, repeat pairing, Developer Mode, signing/preparation, registration, and real-device checks. Use powered USB hubs with sufficient power and data capacity. Check unique WDA/MJPEG ports in the private registry. For already-registered imported phones, `npm run wda:prepare -- --all` builds for all targets. Do not have two Macs supervise one phone concurrently.
+`local:start` starts the app-owned database, phone controller service, dashboard, and the named connector when `.local/cloudflare/enabled` exists. Operators then open the **same approved HTTPS hostname** and sign in with the workspace password. They do not run commands on their own devices. Keep the Mac awake, powered, online, and attached to the phones.
 
-Connected-phone count, simultaneous scroll commands, simultaneous live viewers, and operator count are different workloads. Measure CPU, memory, USB reliability, and upload before claiming a fleet capacity. Keep devices ventilated and follow battery service guidance for damaged or unstable devices.
+- `Start Dashboard.command`: convenience shortcut for starting services on the host.
+- `npm run local:reload`: load code/config updates; ends website sessions and scroll runs.
+- `npm run local:stop`: stop app-owned connectors, dashboard, controllers, and database; all remote access stops.
+- `node scripts/cloudflare-tunnel.mjs stop`: stop the managed named and temporary connectors while leaving the dashboard running locally. The enabled marker is retained, so a later `local:start` can start the named connector again.
+- `node scripts/cloudflare-tunnel.mjs status`: report the named connector process/enable marker. This alone does not prove public HTTPS or physical phone control; repeat the relevant checks in section 9.
+
+Cloning/configuring this repository does not install automatic startup. If the owner wants it to recover after Mac restart, complete and test **HOST_DEPLOYMENT.md section 7** on the chosen host. The provided LaunchAgent starts after that macOS user signs in; it is not pre-login remote access and does not bypass FileVault, keychain, Apple signing, or phone unlock requirements. Reboot and verify actual remote control before claiming unattended recovery.
+
+For every additional iPhone, repeat section 5 and the physical checks in section 6: connect by data-capable USB, accept Trust, enable Developer Mode, wait for Xcode readiness, prepare the signed runner for the actual UDID, then use **Add a phone**. Registration allocates distinct WDA/MJPEG ports. Add phones one at a time, name them clearly, and check that selecting each tile controls that same physical phone. The grid automatically reflects the registry; changing a number in the UI does not connect more phones. Existing imported registrations can be prepared with `npm run wda:prepare -- --all`. Do not have two Macs supervise the same phone concurrently.
+
+Use a powered data-capable USB hub when needed. Measure CPU, memory, USB reliability, upload bandwidth, and simultaneous video/scroll workloads rather than promising a phone count from Mac specifications. Connected phones, running scroll sessions, and simultaneous remote viewers are separate loads. The dashboard offers low-bandwidth snapshots; its guide is docs/shared-dashboard.md. Follow battery service guidance for damaged or unstable devices.
 
 ## 11. Move to a new host
 
@@ -213,7 +252,7 @@ Clone this repository on the new Mac and repeat the prerequisites and setup. Opt
 
 Do not copy `node_modules`, `.appium2`, `.wda`, Xcode DerivedData, signing keys, `.env`, tunnel credentials, or the database as an installation shortcut. Set up the new Mac's signing and password independently. If importing the private registry, place it at `devices.json`, chmod 600, and preserve its unique device ports. Set phone passcodes again directly only if requested. Source-only migration does not move historical jobs/media/database contents.
 
-Stop the old host's controller before moving the phones. The new temporary demo gets a new URL. Verify the new host before retiring the old one. For a stable named tunnel, stop the old connector before final cutover so traffic cannot be split between two Macs.
+Stop the old host's controller before moving the phones. A named tunnel can keep the approved hostname, but stop the old connector before final cutover so traffic cannot be split between Macs. Verify the new host’s signing, local control, protected HTTPS login, remote actions, and recovery before retiring the old installation.
 
 ## 12. Troubleshooting and stop conditions
 
@@ -229,19 +268,32 @@ Stop the old host's controller before moving the phones. The new temporary demo 
 | Remote API or localhost returns 401 | Authentication is working; use the active HTTPS browser URL and password. |
 | Login returns 403 | Check PUBLIC_ORIGIN / exact trusted origins. Do not disable CSRF or use wildcard origins. |
 | Password fails repeatedly | Check Caps Lock/password privately; honor the temporary guess limit. Reset via the local setup page and reload if the owner chooses. |
-| Old demo URL unavailable | Run demo:status. Restart with demo:start if stopped; share the new URL. |
+| Stable URL unavailable | Check host power/network, local dashboard health, named connector status/logs, Cloudflare tunnel health, route hostname, and DNS/certificate status. Do not replace it with a random link without the owner choosing that. |
 | Remote site works but video does not | Verify phone online and WDA's MJPEG stream locally before blaming Cloudflare; then test the authenticated public stream. |
 
 Keep diagnostics private. Logs may contain phone identifiers or app data. Never publish environment files, token files, saved passcodes, screenshots, browser sessions, or full local process/environment dumps.
 
 ## Completion report template
 
-Report the actual URL, shared-password/private/named-access mode, tests/audits run, specific physical phone actions verified, and anything still blocked. State whether the host must be manually started after reboot. Never include the password or make a ten-phone performance claim without measurements.
+Report the actual URL, authentication mode and named/private/temporary routing, tests/audits run, specific physical phone actions verified, and anything still blocked. Record each phone’s local and remote verification separately. State whether startup is manual or login-based and what still requires someone physically present. Never include the password or make a ten-phone performance claim without measurements.
+
+## Optional: remote access without a stable hostname
+
+Only use this when the owner explicitly chooses an expiring address instead of the stable route above:
+
+```sh
+npm run demo:password  # Skip if a valid workspace password already exists.
+npm run demo:start
+npm run demo:status
+```
+
+These historical `demo:*` helpers configure the same shared-password remote-control application through a temporary Cloudflare Quick Tunnel. They are not necessary for a named tunnel, and `demo:start` should not be run against a configured stable installation: it changes the remote origin/auth configuration and reloads the app. The printed address changes when recreated and has no uptime guarantee. Start Dashboard does not recreate temporary connectors. Stop one with `npm run demo:stop`. No owned domain or Tailscale is required for this optional route; no DNS changes are needed. Verify login, video, and a real phone action exactly as in section 9.
 
 ## Official references
 
 - [Apple: run an app on a device](https://help.apple.com/xcode/mac/current/en.lproj/dev5a825a1ca.html)
 - [Apple: Xcode requirements](https://developer.apple.com/xcode/system-requirements)
 - [Appium: parallel iOS sessions](https://appium.github.io/appium-xcuitest-driver/latest/guides/parallel-tests/)
+- [Cloudflare: create a named tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/get-started/create-remote-tunnel/)
 - [Cloudflare: Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)
 - [Homebrew](https://brew.sh)

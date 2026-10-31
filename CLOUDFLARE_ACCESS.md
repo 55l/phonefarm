@@ -1,26 +1,10 @@
 # Password-protected Cloudflare access
 
-## Temporary demo — no domain required
+## Regular remote-control setup
 
-First complete local phone setup in [AI_SETUP.md](AI_SETUP.md). Install the official connector with `brew install cloudflared`.
+Use **[AI_SETUP.md sections 7–9](AI_SETUP.md#7-configure-website-authentication-privately)** for the ordered setup: password record, approved stable hostname, named tunnel route to the local dashboard, origin protection checks, connector startup, and real remote-phone verification. This is the normal browser access path for ongoing team use. The hostname and credentials belong to the installation, not to a hardcoded example or a prior demo.
 
-```sh
-npm run demo:password
-npm run demo:start
-npm run demo:status
-```
-
-The password command opens a local-only setup flow for the owner. Use 12–256 characters, keep it out of chat, and save it. Only a salted scrypt hash is stored in `.local/cloudflare/shared-auth.json`, permission 600.
-
-The start command enables the shared-password auth provider and verifies anonymous/forged-header requests fail before starting a public connector. It captures the random HTTPS URL, configures the exact allowed origin, and prints the address to share. Use the actual printed URL; there is no fixed demo URL in source code. No owned domain, registrar, DNS, DNSSEC, Vercel change, or Tailscale is needed.
-
-```sh
-npm run demo:stop
-```
-
-This stops the temporary connector while retaining website authentication. Stop Dashboard also stops it. A new demo:start after a stop creates a new URL. Start Dashboard alone does not recreate quick tunnels; run demo:start explicitly. The host and connector must remain running. Cloudflare Quick Tunnels have no uptime guarantee, a 200 in-flight request limit, and no SSE support. The app's live screen uses MJPEG, which still needs a real connected-phone verification.
-
-Private state/logs live under `.local/cloudflare`. Do not publish them. A previous remote configuration may be backed up as `before-demo.env`; do not restore an unauthenticated configuration while any public connector exists.
+The owner handles Cloudflare sign-in, any applicable agreements, and credential entry privately. A domain's registrar, website host, and DNS provider are distinct services. Do not assume setting up phone control requires moving an unrelated website or domain.
 
 ## Website login behavior
 
@@ -31,9 +15,9 @@ Private state/logs live under `.local/cloudflare`. Do not publish them. A previo
 - Login/control writes must come from the configured exact public origin; do not bypass CSRF or use wildcard origins.
 - To rotate the password, run demo:password and local:reload. Give the new password only to authorized operators.
 
-## Optional stable hostname
+## Stable hostname and DNS considerations
 
-Use this section only after an explicit request for a custom domain. Temporary demos do not require any of it.
+Use only the hostname and DNS scope authorized for this installation. If the zone already works in Cloudflare, configure the approved subdomain without changing registrar delegation. Review provider requirements before deciding any domain migration is necessary.
 
 1. Have the owner identify the domain/subdomain and sign in to the required accounts directly. Decide who can access the phones and whether shared-password mode remains appropriate.
 2. Review existing DNS, website, email, and DNSSEC records before changing delegation. Cloudflare Free full-zone setup generally requires Cloudflare nameservers; using only selected records with an external authoritative provider requires a supported partial setup/plan. Verify current provider requirements.
@@ -54,13 +38,35 @@ Use this section only after an explicit request for a custom domain. Temporary d
 8. Create `.local/cloudflare/enabled` after configuring the private token. Run `node scripts/cloudflare-tunnel.mjs start`. The helper checks origin protection before connecting. `status` and `stop` manage the connector; Stop Dashboard stops both named and temporary connectors.
 9. Verify valid HTTPS, shared-password login, live video/control, logout, and the unchanged existing website/email routes. Retire the temporary connector and remove stale temporary trusted origins when moving to the stable hostname.
 
-The source includes an optional signed Cloudflare Access JWT provider at `src/auth/cloudflare.ts`, for a separately configured email/identity deployment. It is not used by the default shared-password demo.
+The source includes an optional signed Cloudflare Access JWT provider at `src/auth/cloudflare.ts`, for a separately configured email/identity deployment. It is not used by the shared-password setup.
 
 ## New Mac and rollback
 
 Follow [NEW_HOST_MAC.md](NEW_HOST_MAC.md). A fresh temporary demo gets a fresh URL. A named tunnel can retain its hostname, but stop the old connector before final cutover so traffic is not split between Macs. Recreate signing and passwords privately; never migrate credentials through the public repository.
 
 For rollback, stop public connectors before changing auth providers. Keep original DNS records and coordinate DNSSEC again if reverting delegation. Do not restore an old unauthenticated `.env.remote` while any public path still forwards to the dashboard.
+
+## Optional temporary address — no domain required
+
+First complete local phone setup in [AI_SETUP.md](AI_SETUP.md). Install the official connector with `brew install cloudflared`.
+
+```sh
+npm run demo:password
+npm run demo:start
+npm run demo:status
+```
+
+The password command opens a local-only setup flow for the owner. Use 12–256 characters, keep it out of chat, and save it. Only a salted scrypt hash is stored in `.local/cloudflare/shared-auth.json`, permission 600.
+
+The start command enables the shared-password auth provider and verifies anonymous/forged-header requests fail before starting a public connector. It captures the random HTTPS URL, configures the exact allowed origin, and prints the address to share. Use the actual printed URL; there is no fixed demo URL in source code. No owned domain, registrar, DNS, DNSSEC, Vercel change, or Tailscale is needed.
+
+```sh
+npm run demo:stop
+```
+
+This stops the temporary connector while retaining website authentication. Stop Dashboard also stops it. A new demo:start after a stop creates a new URL. Start Dashboard alone does not recreate quick tunnels; run demo:start explicitly. The host and connector must remain running. Cloudflare Quick Tunnels have no uptime guarantee, a 200 in-flight request limit, and no SSE support. The app's live screen uses MJPEG, which still needs a real connected-phone verification.
+
+Private state/logs live under `.local/cloudflare`. Do not publish them. A previous remote configuration may be backed up as `before-demo.env`; do not restore an unauthenticated configuration while any public connector exists.
 
 ## References
 

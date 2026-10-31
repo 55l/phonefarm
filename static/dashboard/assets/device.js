@@ -50,7 +50,7 @@ async function connect() {
         size = data.screen.screenSize;
         document.querySelector('#device-name').textContent = data.device.name;
         document.querySelector('#device-details').textContent = `${data.device.modelName ?? 'iPhone'} · iOS ${data.device.osVersion} · ${size.width} × ${size.height} points`;
-        document.title = `${data.device.name} · VML Phone Workspace`;
+        document.title = `${data.device.name} · Phone Workspace`;
         screen.style.aspectRatio = `${size.width} / ${size.height}`;
         screen.parentElement.style.aspectRatio = `${size.width} / ${size.height}`;
         screen.src = `${base}/remote/stream?t=${Date.now()}`;

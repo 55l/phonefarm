@@ -1,14 +1,14 @@
 # Instagram Phone Workspace
 
-A macOS dashboard for controlling physical iPhones over USB, with manual Instagram control, an account directory, scroll-only sessions, and a shared-password website login for remote demos.
+A macOS dashboard for controlling physical iPhones over USB, with manual Instagram control, an account directory, scroll-only sessions, and a shared-password website login for remote phone control.
 
 ## Start here
 
-- **[AI_SETUP.md](AI_SETUP.md)** — complete installation, phone setup, verification, and remote-demo runbook for an AI assistant or human operator.
+- **[AI_SETUP.md](AI_SETUP.md)** — complete installation, phone setup, verification, and remote-control runbook for an AI assistant or human operator.
 - **[HOST_DEPLOYMENT.md](HOST_DEPLOYMENT.md)** — dedicated host deployment, stable hosting, optional login startup, recovery, backups, and acceptance checklist.
 - **[AGENTS.md](AGENTS.md)** — repository instructions for coding and setup agents.
 - [NEW_HOST_MAC.md](NEW_HOST_MAC.md) — moving the setup to another Mac.
-- [CLOUDFLARE_ACCESS.md](CLOUDFLARE_ACCESS.md) — temporary demo and optional custom-domain access.
+- [CLOUDFLARE_ACCESS.md](CLOUDFLARE_ACCESS.md) — named tunnels, stable hostnames, and optional temporary access.
 - [REMOTE_ACCESS.md](REMOTE_ACCESS.md) — choosing remote access and optional Tailscale.
 - [DEVELOPMENT.md](DEVELOPMENT.md) — editing the dashboard and backend.
 - [SECURITY.md](SECURITY.md) — credentials and deployment boundaries.
@@ -20,9 +20,9 @@ A macOS dashboard for controlling physical iPhones over USB, with manual Instagr
 - Cancellable scroll-only sessions, using the phone's actual screen dimensions. No likes, comments, follows, or posting.
 - Numeric iPhone unlock using the detected accessibility keypad, with one attempt and no automatic retry. Saving a phone passcode is an explicit separate action.
 - Website password login with salted scrypt storage, secure cookies, six-hour sessions, logout, and guess limits.
-- Temporary Cloudflare demo URLs without a domain, DNS change, or Tailscale on operator devices.
+- Password-protected browser remote access through a named Cloudflare tunnel and an approved stable hostname. Operator devices need no Tailscale or local installation.
 
-The Instagram plugin is enabled by default; the legacy TikTok plugin is disabled unless explicitly enabled. The legacy scheduler and plugin framework remain in the source. The normal manual-control/demo setup does not run a scheduler worker.
+The Instagram plugin is enabled by default; the legacy TikTok plugin is disabled unless explicitly enabled. The legacy scheduler and plugin framework remain in the source. The normal manual-control setup does not run a scheduler worker.
 
 ## Installation outline
 
@@ -38,16 +38,16 @@ npm run host:setup
 
 Set the Apple signing values in the generated private `.env`, pair and prepare the phone, then start the dashboard. Follow **AI_SETUP.md** for the required details and acceptance checks; the commands above alone do not finish phone setup.
 
-After local phone control works, create a temporary password-protected demo:
+After local phone control works, follow **AI_SETUP.md sections 7–9** to set the workspace password privately, configure the approved stable hostname and named Cloudflare tunnel, and verify live control from another device. This guide also covers how each additional iPhone connects, required per-phone checks, daily start/stop commands, and host migration.
+
+On a configured host, start the application and its enabled named connector with:
 
 ```sh
-npm run demo:password
-# Set the password in the temporary localhost page, keeping it out of chat.
-npm run demo:start
-npm run demo:status
+npm run local:start
+node scripts/cloudflare-tunnel.mjs status
 ```
 
-`demo:start` enforces password authentication before opening a public tunnel. It requires the official `cloudflared` connector (`brew install cloudflared`). A quick-tunnel URL changes when recreated and has no uptime guarantee. Keep the host Mac awake. Use `npm run demo:stop` to stop just the temporary connector, or `npm run local:stop` to stop the whole workspace.
+The team visits the configured HTTPS address and signs in with the workspace password. Keep the host Mac awake and its iPhones connected by USB. A temporary address is an optional alternative described at the end of AI_SETUP.md; it is not required for regular remote control.
 
 ## Validation and limits
 
@@ -64,4 +64,4 @@ Local configuration, phone passcodes, Apple certificates, database contents, and
 
 Derived from [Git-Agni/prod-FARM-IOS-Core](https://github.com/Git-Agni/prod-FARM-IOS-Core), upstream revision `3e936babd80723b49b3e594f9403b25363078e64`, with Instagram, device-control, dependency, and remote-access changes. Original license, notice, and source copyright information are retained. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
-See [Shared dashboard guide](docs/shared-dashboard.md) for the VML phone grid, shared controls, preview modes, and interface maintenance.
+See [Shared dashboard guide](docs/shared-dashboard.md) for the phone grid, shared controls, preview modes, and interface maintenance.
