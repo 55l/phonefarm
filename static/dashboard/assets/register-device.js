@@ -1,3 +1,7 @@
+try {
+    document.documentElement.dataset.theme = localStorage.getItem('phone-workspace-theme') === 'light' ? 'light' : 'dark';
+}
+catch { /* default theme */ }
 const list = document.querySelector('#candidate-list');
 const status = document.querySelector('#registration-status');
 async function candidates() {

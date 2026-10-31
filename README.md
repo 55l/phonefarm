@@ -63,3 +63,5 @@ Local configuration, phone passcodes, Apple certificates, database contents, and
 ## Attribution
 
 Derived from [Git-Agni/prod-FARM-IOS-Core](https://github.com/Git-Agni/prod-FARM-IOS-Core), upstream revision `3e936babd80723b49b3e594f9403b25363078e64`, with Instagram, device-control, dependency, and remote-access changes. Original license, notice, and source copyright information are retained. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+See [Shared dashboard guide](docs/shared-dashboard.md) for the VML phone grid, shared controls, preview modes, and interface maintenance.

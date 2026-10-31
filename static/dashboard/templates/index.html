@@ -1,33 +1,38 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Devices · Instagram Workspace</title>
-    <link rel="stylesheet" href="/assets/styles.css">
-    <script src="/assets/htmx.min.js" defer></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phones · VML Workspace</title>
+<link rel="stylesheet" href="/assets/styles.css">
+<script type="module" src="/assets/workspace.js"></script>
 </head>
-<body>
-    <header class="topbar">
-        <div class="topbar-inner">
-            <div class="brand">
-                <a class="brand-name" href="/">Instagram Workspace</a>
-            </div>
-            <nav class="topbar-nav"><a class="button primary" href="/devices/register">Register device</a><button class="button secondary" type="button" hx-get="/api/fragments/devices" hx-target="#device-list" hx-swap="outerHTML">Refresh</button>__PLUGIN_NAV____AUTH_NAV__</nav>
-        </div>
-    </header>
-    <main class="shell">
-        <header class="page-header">
-            <div>
-                <span class="eyebrow">Instagram workspace</span>
-                <h1>Devices</h1>
-                <p>Open a connected iPhone to use Instagram and manage your account list.</p>
-            </div>
-        </header>
-        <section id="device-list" class="device-list" hx-get="/api/fragments/devices" hx-trigger="load" hx-swap="outerHTML" aria-live="polite">
-            <div class="loading-card"><span class="spinner" aria-hidden="true"></span>Looking for connected devices…</div>
-        </section>
-    </main>
-    <footer class="app-footer">__FOOTER__</footer>
+<body class="fleet-workspace">
+<aside class="workspace-sidebar" aria-label="Workspace navigation">
+<a class="workspace-logo" href="/"><span class="vml-wordmark">V<span>ML</span></span><span class="workspace-wordmark">PHONE WORKSPACE</span></a>
+<div class="sidebar-caption">WORKSPACE</div>
+<nav class="workspace-navigation">
+<a class="workspace-nav-link active" href="#phones" data-view="phones"><span aria-hidden="true">▦</span> Phone dashboard</a>
+<a class="workspace-nav-link" href="#accounts" data-view="accounts"><span aria-hidden="true">◉</span> Account directory</a>
+</nav>
+<div class="sidebar-caption">SETUP</div>
+<nav class="workspace-navigation"><a class="workspace-nav-link" href="/devices/register"><span aria-hidden="true">＋</span> Add a phone</a><a class="workspace-nav-link" href="#settings" data-view="settings"><span aria-hidden="true">⌁</span> Connections</a></nav>
+<div class="sidebar-bottom"><span class="workspace-status-dot"></span> SHARED TEAM ACCESS<p>One workspace. Every phone.</p></div>
+</aside>
+<div class="workspace-main">
+<header class="workspace-topbar"><button class="button secondary mobile-menu" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button><div class="workspace-breadcrumb">VML <span>/</span> <strong id="breadcrumb-title">Phones</strong></div><div class="workspace-topbar-actions"><div class="theme-switch" aria-label="Color theme"><button type="button" data-theme-choice="light" aria-pressed="false">☼ Light</button><button type="button" data-theme-choice="dark" aria-pressed="true">☾ Dark</button></div><span class="shared-workspace-label">Shared workspace</span>__PLUGIN_NAV____AUTH_NAV__</div></header>
+<main class="workspace-content">
+<section id="phones-view">
+<header class="fleet-heading"><div><span class="eyebrow">PHONE OPERATIONS</span><h1>EVERY PHONE, ONE PLACE.</h1><p>Live screens and shared controls, together with your team.</p></div><button type="button" id="refresh-fleet" class="button secondary">↻ Refresh phones</button></header>
+<div class="fleet-metrics" aria-label="Phone status summary"><div><span>Registered phones</span><strong id="count-total">—</strong><small>Available to the workspace</small></div><div><span>Connected</span><strong id="count-connected">—</strong><small>Attached to this host</small></div><div><span>Scrolling</span><strong id="count-scrolling">—</strong><small>Current scroll sessions</small></div><div><span>Needs attention</span><strong id="count-attention">—</strong><small>Offline or reconnecting</small></div></div>
+<div class="fleet-toolbar"><label class="fleet-search"><span class="sr-only">Search phones and accounts</span><input id="fleet-search" type="search" placeholder="Search phone or Instagram handle…"></label><select id="fleet-filter" aria-label="Filter phones"><option value="all">All phones</option><option value="connected">Connected</option><option value="attention">Needs attention</option><option value="paused">Paused</option></select><select id="preview-mode" aria-label="Preview mode"><option value="live">Live screens</option><option value="snapshots">Low bandwidth</option><option value="paused">Pause previews</option></select><select id="grid-density" aria-label="Phone tile size"><option value="compact">Compact tiles</option><option value="comfortable">Larger tiles</option></select></div>
+<p id="fleet-message" class="fleet-message" role="status" aria-live="polite">Connecting to the workspace…</p>
+<div class="fleet-layout" id="fleet-layout"><div id="phone-grid" class="phone-grid" aria-label="Registered phones"></div><aside id="control-panel" class="fleet-control-panel" aria-label="Phone controls" hidden><div class="control-panel-heading"><div><span class="eyebrow">PHONE CONTROLS</span><h2 id="focused-phone-name">Phone</h2></div><button id="close-control" class="button secondary" aria-label="Close phone controls">×</button></div><iframe id="phone-controls-frame" title="Selected phone controls" allow="clipboard-write"></iframe></aside></div>
+<div id="fleet-empty" class="workspace-empty" hidden><span aria-hidden="true">▦</span><h2>No phones here yet</h2><p id="fleet-empty-message">Connect an iPhone to the host Mac and add it to the workspace.</p><a class="button primary" href="/devices/register">Add a phone</a></div>
+</section>
+<section id="accounts-view" hidden><header class="fleet-heading"><div><span class="eyebrow">ACCOUNT DIRECTORY</span><h1>EVERY ACCOUNT, ONE PLACE.</h1><p>Instagram handles saved on your phones, shared with the team.</p></div></header><div class="workspace-table-wrap"><table class="workspace-table"><thead><tr><th>INSTAGRAM ACCOUNT</th><th>PHONE</th><th>CONNECTION</th><th></th></tr></thead><tbody id="workspace-accounts"></tbody></table></div><p class="field-help">These are saved account labels. Sign-in and account switching happen inside Instagram on the phone.</p></section>
+<section id="settings-view" hidden><header class="fleet-heading"><div><span class="eyebrow">CONNECTIONS</span><h1>YOUR PHONES. CONNECTED.</h1><p>Manage the phones attached to this workspace.</p></div><a class="button primary" href="/devices/register">＋ Add a phone</a></header><div class="workspace-notice"><strong>Shared phone dashboard</strong><p>Everyone with workspace access can view the connected phones and use their controls. Keep the host Mac awake and the phones connected by USB.</p></div><div class="workspace-table-wrap"><table class="workspace-table"><thead><tr><th>PHONE</th><th>STATUS</th><th>WORKSPACE CONTROL</th><th></th></tr></thead><tbody id="workspace-connections"></tbody></table></div></section>
+<footer class="workspace-footer"><span id="workspace-updated">Waiting for phones</span><span>VML · Shared phone workspace</span></footer>
+</main>
+</div>
 </body>
 </html>

@@ -49,6 +49,7 @@ interface LoadedDashboardTheme {
     tasksScript: string;
     registerDeviceHtml: string;
     registerDeviceScript: string;
+    workspaceScript: string;
     htmx: string;
 }
 
@@ -169,7 +170,7 @@ export async function createApp(options: CreateAppOptions): Promise<FastifyInsta
     if (options.dashboardTheme) {
         const root = options.dashboardTheme.rootDirectory;
         const require = createRequire(import.meta.url);
-        const [indexHtml, deviceHtml, tasksHtml, registerDeviceHtml, styles, deviceScript, tasksScript, registerDeviceScript, htmx] = await Promise.all([
+        const [indexHtml, deviceHtml, tasksHtml, registerDeviceHtml, styles, deviceScript, tasksScript, registerDeviceScript, htmx, workspaceScript] = await Promise.all([
             readFile(path.join(root, 'templates/index.html'), 'utf8'),
             readFile(path.join(root, 'templates/device.html'), 'utf8'),
             readFile(path.join(root, 'templates/tasks.html'), 'utf8'),
@@ -179,6 +180,7 @@ export async function createApp(options: CreateAppOptions): Promise<FastifyInsta
             readFile(path.join(root, 'assets/tasks.js'), 'utf8'),
             readFile(path.join(root, 'assets/register-device.js'), 'utf8'),
             readFile(require.resolve('htmx.org/dist/htmx.min.js'), 'utf8'),
+            readFile(path.join(root, 'assets/workspace.js'), 'utf8').catch(() => ''),
         ]);
         // Content-hash every asset URL in the templates so a changed file gets a
         // fresh URL that no browser or CDN can serve stale.
@@ -186,6 +188,7 @@ export async function createApp(options: CreateAppOptions): Promise<FastifyInsta
             'styles.css': assetHash(styles), 'device.js': assetHash(deviceScript),
             'tasks.js': assetHash(tasksScript), 'register-device.js': assetHash(registerDeviceScript),
             'htmx.min.js': assetHash(htmx),
+            'workspace.js': assetHash(workspaceScript),
         };
         const finalize = (html: string) => {
             let out = html.replaceAll('__AUTH_NAV__', authNavHtml).replaceAll('__PLUGIN_NAV__', pluginNavHtml)
@@ -196,7 +199,7 @@ export async function createApp(options: CreateAppOptions): Promise<FastifyInsta
         themed = {
             indexHtml: finalize(indexHtml), deviceHtml: finalize(deviceHtml),
             tasksHtml: finalize(tasksHtml), registerDeviceHtml: finalize(registerDeviceHtml),
-            styles, deviceScript, tasksScript, registerDeviceScript, htmx,
+            styles, deviceScript, tasksScript, registerDeviceScript, htmx, workspaceScript,
         };
     }
 
@@ -588,6 +591,14 @@ export async function createApp(options: CreateAppOptions): Promise<FastifyInsta
         };
         app.get('/assets/styles.css', asset('text/css', theme.styles));
         app.get('/assets/device.js', asset('text/javascript', theme.deviceScript));
+        app.get('/assets/workspace.js', asset('text/javascript', theme.workspaceScript));
+        app.get<{ Params: { font: string } }>('/assets/fonts/:font', async (request, reply) => {
+            if (!/^(plex-(400|500|600|700)|rajdhani-(600|700))\.ttf$/.test(request.params.font)) return reply.code(404).send();
+            try {
+                const font = await readFile(path.join(options.dashboardTheme!.rootDirectory, 'fonts', request.params.font));
+                return reply.type('font/ttf').header('cache-control', 'public, max-age=86400').send(font);
+            } catch { return reply.code(404).send(); }
+        });
         app.get('/assets/tasks.js', asset('text/javascript', theme.tasksScript));
         app.get('/assets/register-device.js', asset('text/javascript', theme.registerDeviceScript));
         app.get('/assets/htmx.min.js', asset('text/javascript', theme.htmx));
@@ -641,13 +652,14 @@ export async function createApp(options: CreateAppOptions): Promise<FastifyInsta
         if (!themed) return reply.type('text/html').send(renderPage('Register device', '<h1>Register device</h1><p>Use <code>POST /api/device-registrations</code> to start device setup.</p>'));
         return reply.type('text/html').send(themed.registerDeviceHtml);
     });
-    app.get<{ Params: { udid: string } }>('/devices/:udid', async (request, reply) => {
+    app.get<{ Params: { udid: string }; Querystring: { embedded?: string } }>('/devices/:udid', async (request, reply) => {
         const device = (await loadRegisteredDevices()).find(({ udid }) => udid === request.params.udid);
         if (!device) return reply.code(404).type('text/html').send(renderPage('Not found', '<h1>Device not found</h1>'));
         if (themed) {
             const rendered = options.dashboardTheme?.renderDevice
                 ? options.dashboardTheme.renderDevice(themed.deviceHtml, device) : themed.deviceHtml;
-            return reply.type('text/html').send(rendered.replaceAll('__DEVICE_UDID__', encodeURIComponent(device.udid)));
+            const html = rendered.replaceAll('__DEVICE_UDID__', encodeURIComponent(device.udid));
+            return reply.type('text/html').send(request.query.embedded === '1' ? html.replace('<body>', '<body class="embedded-device">') : html);
         }
         const schedules = await options.scheduler.listSchedules(50, device.udid);
         const executions = await options.scheduler.listExecutions(50, device.udid);

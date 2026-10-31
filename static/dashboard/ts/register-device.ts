@@ -1,3 +1,4 @@
+try { document.documentElement.dataset.theme = localStorage.getItem('phone-workspace-theme') === 'light' ? 'light' : 'dark'; } catch { /* default theme */ }
 // Local manual-device registration; no social-app automation checks.
 export {};
 interface Candidate { name: string; udid: string; osVersion: string }

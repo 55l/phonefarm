@@ -1,3 +1,7 @@
+try {
+    document.documentElement.dataset.theme = localStorage.getItem('phone-workspace-theme') === 'light' ? 'light' : 'dark';
+}
+catch { /* default theme */ }
 const schedulesElement = document.querySelector('#schedules');
 const executionsElement = document.querySelector('#executions');
 const refresh = document.querySelector('#refresh-tasks');

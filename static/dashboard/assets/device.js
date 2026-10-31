@@ -1,3 +1,7 @@
+try {
+    document.documentElement.dataset.theme = localStorage.getItem('phone-workspace-theme') === 'light' ? 'light' : 'dark';
+}
+catch { /* default theme */ }
 const deviceId = document.querySelector('[data-device-udid]').dataset.deviceUdid;
 const base = `/api/devices/${encodeURIComponent(decodeURIComponent(deviceId))}`;
 const screen = document.querySelector('#screen');
@@ -46,7 +50,7 @@ async function connect() {
         size = data.screen.screenSize;
         document.querySelector('#device-name').textContent = data.device.name;
         document.querySelector('#device-details').textContent = `${data.device.modelName ?? 'iPhone'} · iOS ${data.device.osVersion} · ${size.width} × ${size.height} points`;
-        document.title = `${data.device.name} · Instagram Workspace`;
+        document.title = `${data.device.name} · VML Phone Workspace`;
         screen.style.aspectRatio = `${size.width} / ${size.height}`;
         screen.parentElement.style.aspectRatio = `${size.width} / ${size.height}`;
         screen.src = `${base}/remote/stream?t=${Date.now()}`;

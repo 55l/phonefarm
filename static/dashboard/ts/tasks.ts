@@ -1,3 +1,4 @@
+try { document.documentElement.dataset.theme = localStorage.getItem('phone-workspace-theme') === 'light' ? 'light' : 'dark'; } catch { /* default theme */ }
 export {};
 
 interface Schedule {
